@@ -1,0 +1,410 @@
+
+
+local isMenuOpen  = false
+local noclipOn    = false
+local godmodeOn   = false
+local invisibleOn = false
+local spectating  = false
+local noclipSpeed = 1.0
+
+-- ─── Framework detection ──────────────────────────────────────
+local Framework    = nil
+local FrameworkName = 'standalone'
+
+AddEventHandler('onClientResourceStart', function(res)
+    if res ~= GetCurrentResourceName() then return end
+
+    if Config.Framework == 'auto' or Config.Framework == 'esx' then
+        if GetResourceState('es_extended') == 'started' then
+            Framework    = exports['es_extended']:getSharedObject()
+            FrameworkName = 'esx'
+        end
+    end
+
+    if FrameworkName == 'standalone' and
+       (Config.Framework == 'auto' or Config.Framework == 'qb') then
+        if GetResourceState('qb-core') == 'started' then
+            Framework    = exports['qb-core']:GetCoreObject()
+            FrameworkName = 'qb'
+        end
+    end
+end)
+
+-- ─── Menu open / close ────────────────────────────────────────
+local function OpenMenu()
+    isMenuOpen = true
+    SetNuiFocus(true, true)
+    SendNUIMessage({
+        action      = 'open',
+        serverName  = Config.ServerName,
+        framework   = FrameworkName,
+        isSpectating = spectating,
+    })
+    TriggerServerEvent('admin_menu:requestPlayerList')
+end
+
+local function CloseMenu()
+    isMenuOpen = false
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'close' })
+end
+
+-- ─── Key binding ──────────────────────────────────────────────
+RegisterKeyMapping('admin_menu_toggle', 'Toggle Admin Menu', 'keyboard', Config.DefaultKey)
+
+RegisterCommand('admin_menu_toggle', function()
+    if isMenuOpen then
+        CloseMenu()
+    else
+        TriggerServerEvent('admin_menu:checkAccess')
+    end
+end, false)
+
+-- ─── Access response ──────────────────────────────────────────
+RegisterNetEvent('admin_menu:accessGranted')
+AddEventHandler('admin_menu:accessGranted', function()
+    OpenMenu()
+end)
+
+RegisterNetEvent('admin_menu:accessDenied')
+AddEventHandler('admin_menu:accessDenied', function()
+    local msg = '~r~You do not have permission to use the admin menu.'
+    BeginTextCommandThefeedPost('STRING')
+    AddTextComponentSubstringPlayerName(msg)
+    EndTextCommandThefeedPostTicker(false, true)
+end)
+
+-- ─── NUI callbacks — menu ─────────────────────────────────────
+RegisterNUICallback('closeMenu', function(_, cb)
+    CloseMenu()
+    cb({})
+end)
+
+RegisterNUICallback('getPlayers', function(_, cb)
+    TriggerServerEvent('admin_menu:requestPlayerList')
+    cb({})
+end)
+
+-- ─── NUI callbacks — players ──────────────────────────────────
+RegisterNUICallback('kickPlayer', function(data, cb)
+    TriggerServerEvent('admin_menu:kickPlayer', data.serverId, data.reason)
+    cb({})
+end)
+
+RegisterNUICallback('banPlayer', function(data, cb)
+    TriggerServerEvent('admin_menu:banPlayer', data.serverId, data.reason, data.duration)
+    cb({})
+end)
+
+RegisterNUICallback('freezePlayer', function(data, cb)
+    TriggerServerEvent('admin_menu:freezePlayer', data.serverId, data.freeze)
+    cb({})
+end)
+
+RegisterNUICallback('healPlayer', function(data, cb)
+    TriggerServerEvent('admin_menu:healPlayer', data.serverId)
+    cb({})
+end)
+
+RegisterNUICallback('bringPlayer', function(data, cb)
+    TriggerServerEvent('admin_menu:bringPlayer', data.serverId)
+    cb({})
+end)
+
+RegisterNUICallback('teleportToPlayer', function(data, cb)
+    TriggerServerEvent('admin_menu:teleportToPlayer', data.serverId)
+    cb({})
+end)
+
+RegisterNUICallback('spectatePlayer', function(data, cb)
+    TriggerServerEvent('admin_menu:spectatePlayer', data.serverId)
+    cb({})
+end)
+
+RegisterNUICallback('giveWeapon', function(data, cb)
+    TriggerServerEvent('admin_menu:giveWeapon', data.serverId, data.weapon, data.ammo)
+    cb({})
+end)
+
+RegisterNUICallback('giveMoney', function(data, cb)
+    TriggerServerEvent('admin_menu:giveMoney', data.serverId, data.moneyType, data.amount)
+    cb({})
+end)
+
+-- ─── NUI callbacks — self ─────────────────────────────────────
+RegisterNUICallback('toggleGodmode', function(data, cb)
+    godmodeOn = data.state
+    SetEntityInvincible(PlayerPedId(), godmodeOn)
+    cb({})
+end)
+
+RegisterNUICallback('toggleNoclip', function(data, cb)
+    noclipOn = data.state
+    if not noclipOn then
+        local ped = PlayerPedId()
+        SetEntityCollision(ped, true, true)
+        FreezeEntityPosition(ped, false)
+        if not invisibleOn then
+            SetEntityVisible(ped, true, false)
+        end
+    end
+    cb({})
+end)
+
+RegisterNUICallback('toggleInvisible', function(data, cb)
+    invisibleOn = data.state
+    if not noclipOn then
+        SetEntityVisible(PlayerPedId(), not invisibleOn, false)
+    end
+    cb({})
+end)
+
+RegisterNUICallback('healSelf', function(_, cb)
+    local ped = PlayerPedId()
+    SetEntityHealth(ped, GetEntityMaxHealth(ped))
+    SetPedArmour(ped, 100)
+    cb({})
+end)
+
+RegisterNUICallback('setNoclipSpeed', function(data, cb)
+    noclipSpeed = tonumber(data.speed) or 1.0
+    cb({})
+end)
+
+RegisterNUICallback('stopSpectate', function(_, cb)
+    spectating = false
+    NetworkSetInSpectatorMode(false, PlayerPedId())
+    local ped = PlayerPedId()
+    SetEntityVisible(ped, true, false)
+    SetEntityCollision(ped, true, true)
+    cb({})
+end)
+
+-- ─── NUI callbacks — vehicle ──────────────────────────────────
+RegisterNUICallback('spawnVehicle', function(data, cb)
+    local model = data.model
+    local hash  = GetHashKey(model)
+
+    if not IsModelValid(hash) then
+        cb({ success = false, msg = 'Invalid model: ' .. model })
+        return
+    end
+
+    RequestModel(hash)
+    local t = 0
+    while not HasModelLoaded(hash) and t < 150 do
+        Wait(100)
+        t = t + 1
+    end
+
+    if not HasModelLoaded(hash) then
+        cb({ success = false, msg = 'Model timed out: ' .. model })
+        return
+    end
+
+    local ped     = PlayerPedId()
+    local pos     = GetEntityCoords(ped)
+    local heading = GetEntityHeading(ped)
+
+    if IsPedInAnyVehicle(ped, false) then
+        local old = GetVehiclePedIsIn(ped, false)
+        DeleteVehicle(old)
+    end
+
+    local veh = CreateVehicle(hash, pos.x, pos.y, pos.z + 1.0, heading, true, false)
+    SetPedIntoVehicle(ped, veh, -1)
+    SetVehicleOnGroundProperly(veh)
+    SetModelAsNoLongerNeeded(hash)
+
+    cb({ success = true })
+end)
+
+RegisterNUICallback('fixVehicle', function(_, cb)
+    local ped = PlayerPedId()
+    if IsPedInAnyVehicle(ped, false) then
+        local veh = GetVehiclePedIsIn(ped, false)
+        SetVehicleFixed(veh)
+        SetVehicleDeformationFixed(veh)
+        SetVehicleUndriveable(veh, false)
+        SetVehicleEngineOn(veh, true, true, false)
+    end
+    cb({})
+end)
+
+RegisterNUICallback('flipVehicle', function(_, cb)
+    local ped = PlayerPedId()
+    if IsPedInAnyVehicle(ped, false) then
+        SetVehicleOnGroundProperly(GetVehiclePedIsIn(ped, false))
+    end
+    cb({})
+end)
+
+RegisterNUICallback('maxVehicle', function(_, cb)
+    local ped = PlayerPedId()
+    if IsPedInAnyVehicle(ped, false) then
+        local veh = GetVehiclePedIsIn(ped, false)
+        -- Engine, brakes, transmission, turbo
+        for mod = 0, 3 do
+            SetVehicleMod(veh, mod, GetNumVehicleMods(veh, mod) - 1, false)
+        end
+        ToggleVehicleMod(veh, 18, true) -- turbo
+        SetVehicleHandlingFloat(veh, 'CHandlingData', 'fInitialDriveMaxFlatVel', 500.0)
+    end
+    cb({})
+end)
+
+RegisterNUICallback('deleteVehicle', function(_, cb)
+    local ped = PlayerPedId()
+    if IsPedInAnyVehicle(ped, false) then
+        local veh = GetVehiclePedIsIn(ped, false)
+        TaskLeaveVehicle(ped, veh, 0)
+        Wait(800)
+        DeleteVehicle(veh)
+    end
+    cb({})
+end)
+
+-- ─── NUI callbacks — server ───────────────────────────────────
+RegisterNUICallback('setWeather', function(data, cb)
+    TriggerServerEvent('admin_menu:setWeather', data.weather)
+    cb({})
+end)
+
+RegisterNUICallback('setTime', function(data, cb)
+    TriggerServerEvent('admin_menu:setTime', data.hour, data.minute)
+    cb({})
+end)
+
+RegisterNUICallback('sendAnnouncement', function(data, cb)
+    TriggerServerEvent('admin_menu:sendAnnouncement', data.message)
+    cb({})
+end)
+
+-- ─── NUI callbacks — teleport ─────────────────────────────────
+RegisterNUICallback('teleportToCoords', function(data, cb)
+    SetEntityCoords(PlayerPedId(), data.x, data.y, data.z, false, false, false, false)
+    cb({})
+end)
+
+-- ─── Server → client events ───────────────────────────────────
+RegisterNetEvent('admin_menu:receivePlayerList')
+AddEventHandler('admin_menu:receivePlayerList', function(players)
+    SendNUIMessage({ action = 'updatePlayers', players = players })
+end)
+
+RegisterNetEvent('admin_menu:notification')
+AddEventHandler('admin_menu:notification', function(msg, ntype)
+    SendNUIMessage({ action = 'notification', message = msg, type = ntype or 'info' })
+end)
+
+RegisterNetEvent('admin_menu:freezeSelf')
+AddEventHandler('admin_menu:freezeSelf', function(state)
+    FreezeEntityPosition(PlayerPedId(), state)
+end)
+
+RegisterNetEvent('admin_menu:healSelf')
+AddEventHandler('admin_menu:healSelf', function()
+    local ped = PlayerPedId()
+    SetEntityHealth(ped, GetEntityMaxHealth(ped))
+    SetPedArmour(ped, 100)
+end)
+
+RegisterNetEvent('admin_menu:receiveWeapon')
+AddEventHandler('admin_menu:receiveWeapon', function(weapon, ammo)
+    GiveWeaponToPed(PlayerPedId(), GetHashKey(weapon), ammo, false, true)
+end)
+
+RegisterNetEvent('admin_menu:teleportToCoords')
+AddEventHandler('admin_menu:teleportToCoords', function(coords)
+    SetEntityCoords(PlayerPedId(), coords.x, coords.y, coords.z, false, false, false, false)
+end)
+
+RegisterNetEvent('admin_menu:setWeather')
+AddEventHandler('admin_menu:setWeather', function(weather)
+    SetWeatherTypeNow(weather)
+    ClearWeatherTypePersist()
+    SetWeatherTypePersist(weather)
+    SetWeatherTypeNowPersist(weather)
+end)
+
+RegisterNetEvent('admin_menu:setTime')
+AddEventHandler('admin_menu:setTime', function(hour, minute)
+    NetworkOverrideClockTime(hour, minute, 0)
+end)
+
+-- Relay admin position for "bring player"
+RegisterNetEvent('admin_menu:sendAdminPos')
+AddEventHandler('admin_menu:sendAdminPos', function(targetId)
+    local c = GetEntityCoords(PlayerPedId())
+    TriggerServerEvent('admin_menu:receiveAdminPos', targetId, { x = c.x, y = c.y, z = c.z })
+end)
+
+-- Relay target position for "teleport to player"
+RegisterNetEvent('admin_menu:sendTargetPos')
+AddEventHandler('admin_menu:sendTargetPos', function(adminId)
+    local c = GetEntityCoords(PlayerPedId())
+    TriggerServerEvent('admin_menu:receiveTargetPos', adminId, { x = c.x, y = c.y, z = c.z + 0.5 })
+end)
+
+-- Spectate
+RegisterNetEvent('admin_menu:startSpectate')
+AddEventHandler('admin_menu:startSpectate', function(targetNetId)
+    local targetEnt = NetworkGetEntityFromNetworkId(targetNetId)
+    if not DoesEntityExist(targetEnt) then return end
+
+    spectating = true
+    SetEntityVisible(PlayerPedId(), false, false)
+    NetworkSetInSpectatorMode(true, targetEnt)
+end)
+
+-- ─── NoClip thread ────────────────────────────────────────────
+CreateThread(function()
+    while true do
+        if noclipOn then
+            Wait(0)
+            local ped = PlayerPedId()
+            local pos = GetEntityCoords(ped)
+
+            SetEntityCollision(ped, false, false)
+            FreezeEntityPosition(ped, true)
+            SetEntityVisible(ped, false, false)
+
+            local rot = GetGameplayCamRot(2)
+            local rx  = math.rad(rot.x)
+            local rz  = math.rad(rot.z)
+
+            local dir = vector3(
+                -math.sin(rz) * math.abs(math.cos(rx)),
+                 math.cos(rz) * math.abs(math.cos(rx)),
+                 math.sin(rx)
+            )
+            local right = vector3(math.cos(rz), math.sin(rz), 0.0)
+            local spd   = noclipSpeed * 0.45
+
+            -- W / S / A / D / E (up) / Q (down)
+            if IsControlPressed(0, 32) then pos = pos + dir   * spd end
+            if IsControlPressed(0, 33) then pos = pos - dir   * spd end
+            if IsControlPressed(0, 34) then pos = pos - right * spd end
+            if IsControlPressed(0, 35) then pos = pos + right * spd end
+            if IsControlPressed(0, 38) then pos = vector3(pos.x, pos.y, pos.z + spd) end
+            if IsControlPressed(0, 44) then pos = vector3(pos.x, pos.y, pos.z - spd) end
+
+            SetEntityCoords(ped, pos.x, pos.y, pos.z, false, false, false, false)
+        else
+            Wait(500)
+        end
+    end
+end)
+
+-- ─── God mode thread ──────────────────────────────────────────
+CreateThread(function()
+    while true do
+        Wait(1000)
+        if godmodeOn then
+            local ped = PlayerPedId()
+            SetEntityInvincible(ped, true)
+            SetEntityHealth(ped, GetEntityMaxHealth(ped))
+            SetPedArmour(ped, 100)
+        end
+    end
+end)
