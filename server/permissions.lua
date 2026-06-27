@@ -1,5 +1,6 @@
 
 
+-- Framework reference (populated in main.lua onResourceStart)
 Framework    = nil
 FrameworkName = 'standalone'
 
