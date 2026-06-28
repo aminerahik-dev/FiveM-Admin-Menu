@@ -244,6 +244,13 @@ Three permission tiers, each inheriting the level below:
 
 ```
 fivem-admin-menu/
+├── previews/
+│   ├── preview-main.png
+│   ├── preview-player-actions.png
+│   ├── preview-records-bans.png
+│   ├── preview-self-controls.png
+│   ├── preview-vehicle-tools.png
+│   └── preview-weather-time.png
 ├── client/
 │   └── main.lua              # Client-side NUI + local controls
 ├── server/
