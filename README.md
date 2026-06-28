@@ -19,7 +19,7 @@
 
 A clean, dark-themed admin menu built for serious FiveM servers. No bloat, no third-party UI libraries. Full player management, 3-tier permission system, persistent ban records, and action logging — all in one resource.
 
-→ [Jump to screenshots](#-preview)
+→ [Jump to screenshots](#-previews)
 
 ---
 
@@ -52,6 +52,7 @@ A clean, dark-themed admin menu built for serious FiveM servers. No bloat, no th
 ## ✅ Features
 
 ### 👤 Player Management
+
 - View all online players with real-time info (ID, name, identifier, ping)
 - **Kick** — with reason logged
 - **Ban** — persistent, reason required, stored in database or KvP fallback
@@ -68,47 +69,53 @@ A clean, dark-themed admin menu built for serious FiveM servers. No bloat, no th
 - **View player info** — identifiers, ping, coords, job, money
 
 ### 🧰 Self Controls
+
 - **God mode** — toggle invincibility
 - **Noclip** — fly freely through the map
 - **Invisible** — hide from other players
 - **Heal self** — full health and armor restore
 
 ### 🚗 Vehicle Tools
+
 - Spawn any vehicle by model name
 - Delete current vehicle
 
 ### 🌤️ World Controls
+
 - Set weather (Clear, Rain, Thunder, Fog, Snow...)
 - Set server time (hour / minute)
 - Send server-wide announcements
 
 ### 📍 Teleport
+
 - Teleport to player
 - Teleport to coordinates (X, Y, Z input)
 
 ### 📁 Records
+
 - **Ban list** — view, search, and manage all active bans
 - **Warning list** — view warnings per player
 
 ### 📝 Commands
-| Command | Description | Permission |
-|---|---|---|
-| `/kick [id] [reason]` | Kick a player | Mod+ |
-| `/ban [id] [reason]` | Ban a player | Admin+ |
-| `/warn [id] [reason]` | Warn a player | Mod+ |
-| `/mute [id]` | Mute a player | Mod+ |
-| `/unmute [id]` | Unmute a player | Mod+ |
-| `/revive [id]` | Revive a player | Mod+ |
+
+| Command               | Description     | Permission |
+| --------------------- | --------------- | ---------- |
+| `/kick [id] [reason]` | Kick a player   | Mod+       |
+| `/ban [id] [reason]`  | Ban a player    | Admin+     |
+| `/warn [id] [reason]` | Warn a player   | Mod+       |
+| `/mute [id]`          | Mute a player   | Mod+       |
+| `/unmute [id]`        | Unmute a player | Mod+       |
+| `/revive [id]`        | Revive a player | Mod+       |
 
 ---
 
 ## ⚙️ Compatibility
 
-| Framework | Supported | Notes |
-|---|---|---|
-| **ESX** | ✅ | Job & group detection |
-| **QBCore** | ✅ | Permission group detection |
-| **Standalone** | ✅ | ACE permissions only |
+| Framework      | Supported | Notes                      |
+| -------------- | --------- | -------------------------- |
+| **ESX**        | ✅        | Job & group detection      |
+| **QBCore**     | ✅        | Permission group detection |
+| **Standalone** | ✅        | ACE permissions only       |
 
 Framework is auto-detected at startup — no config change needed when switching frameworks.
 
@@ -116,11 +123,11 @@ Framework is auto-detected at startup — no config change needed when switching
 
 ## 📦 Dependencies
 
-| Dependency | Required | Purpose |
-|---|---|---|
-| [FiveM Server](https://runtime.fivem.net/artifacts/fivem/) build 6116+ | ✅ | Runtime |
-| [oxmysql](https://github.com/overextended/oxmysql) | ❌ Optional | Persistent ban storage |
-| ESX or QBCore | ❌ Optional | Framework integration |
+| Dependency                                                             | Required    | Purpose                |
+| ---------------------------------------------------------------------- | ----------- | ---------------------- |
+| [FiveM Server](https://runtime.fivem.net/artifacts/fivem/) build 6116+ | ✅          | Runtime                |
+| [oxmysql](https://github.com/overextended/oxmysql)                     | ❌ Optional | Persistent ban storage |
+| ESX or QBCore                                                          | ❌ Optional | Framework integration  |
 
 > **oxmysql** is disabled by default in `fxmanifest.lua`. To enable persistent MySQL ban storage, uncomment the `@oxmysql/lib/MySQL.lua` line. Without it, bans fall back to FiveM's native KvP automatically — no crash, no data loss.
 
@@ -131,6 +138,7 @@ Framework is auto-detected at startup — no config change needed when switching
 ### Step 1 — Download
 
 **Option A — Git clone**
+
 ```bash
 cd resources
 git clone https://github.com/aminerahik-dev/FiveM-Admin-Menu
@@ -161,6 +169,7 @@ ensure FiveM-Admin-Menu
 This resource uses FiveM's native ACE permission system. Add the following to `server.cfg`:
 
 **Permission nodes:**
+
 ```cfg
 # Mod — basic moderation tools
 add_ace group.mod  admin_menu.mod  allow
@@ -173,6 +182,7 @@ add_ace group.superadmin  admin_menu.superadmin  allow
 ```
 
 **Assign players to groups:**
+
 ```cfg
 # By license (Rockstar)
 add_principal identifier.license:YOUR_LICENSE_HERE  group.superadmin
@@ -220,11 +230,11 @@ Config.BanReasons = {
 
 Three permission tiers, each inheriting the level below:
 
-| Level | ACE Node | Access |
-|---|---|---|
-| **Mod** | `admin_menu.mod` | Kick, warn, mute, revive, basic tools |
-| **Admin** | `admin_menu.admin` | Everything above + ban, give money/items/weapons |
-| **Superadmin** | `admin_menu.superadmin` | Full access including records management |
+| Level          | ACE Node                | Access                                           |
+| -------------- | ----------------------- | ------------------------------------------------ |
+| **Mod**        | `admin_menu.mod`        | Kick, warn, mute, revive, basic tools            |
+| **Admin**      | `admin_menu.admin`      | Everything above + ban, give money/items/weapons |
+| **Superadmin** | `admin_menu.superadmin` | Full access including records management         |
 
 > Backward compatible with the legacy `admin_menu.open` ACE node.
 
@@ -255,29 +265,35 @@ fivem-admin-menu/
 ## 🛠️ Troubleshooting
 
 **All players show as Mod rank regardless of their group**
+
 - Root cause is malformed ACE syntax in `server.cfg` — FiveM's parser is strict about spacing
 - Verify your lines match exactly: `add_ace group.admin admin_menu.admin allow` (single space between each token, no tabs)
 - After editing `server.cfg`, run `restart FiveM-Admin-Menu` in the server console — a full server restart is not required
 - Use `test_ace [player_id] admin_menu.superadmin` in the server console to confirm the correct node resolves
 
 **Menu doesn't open**
+
 - Confirm `ensure FiveM-Admin-Menu` is in `server.cfg`
 - Check F8 console for errors on resource start
 - Verify your ACE node is correctly assigned (`add_principal` line matches your identifier)
 
 **Permission denied / menu opens but actions are blocked**
+
 - Make sure the correct ACE node is assigned (`admin_menu.mod`, `.admin`, or `.superadmin`)
 - Run `test_ace [player_id] admin_menu.admin` in the server console to verify ACE is active
 
 **Bans not persisting after server restart**
+
 - Without `oxmysql`: bans use KvP — data persists per server instance but may not survive full wipes
 - With `oxmysql`: ensure the resource starts before `fivem-admin-menu` and the DB connection is healthy
 
 **Spectate crashes or kicks me**
+
 - This is a known FiveM issue when spectating players with unsynced network objects
 - The resource includes a network validation guard — if it still occurs, the target player may have a bad sync state; try spectating someone else first
 
 **`NetworkGetEntityFromNetworkId` warning in console**
+
 - Non-critical. Happens when a player's vehicle netId is 0 (not yet spawned/synced). Guarded in the code — safe to ignore.
 
 ---
