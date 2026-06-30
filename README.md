@@ -141,14 +141,14 @@ Framework is auto-detected at startup — no config change needed when switching
 
 ```bash
 cd resources
-git clone https://github.com/aminerahik-dev/FiveM-Admin-Menu
+git clone https://github.com/aminerahik-dev/fivem-admin-menu
 ```
 
 **Option B — Manual download**
 
 Download the latest `.zip` from [Releases](../../releases), extract it, and place the folder inside your `resources` directory.
 
-Make sure the folder is named exactly: `FiveM-Admin-Menu`
+Make sure the folder is named exactly: `fivem-admin-menu`
 
 ---
 
@@ -157,7 +157,7 @@ Make sure the folder is named exactly: `FiveM-Admin-Menu`
 Open your `server.cfg` and add:
 
 ```cfg
-ensure FiveM-Admin-Menu
+ensure fivem-admin-menu
 ```
 
 > ⚠️ Place this **after** your framework resource (`ensure es_extended` or `ensure qb-core`).
@@ -275,12 +275,12 @@ fivem-admin-menu/
 
 - Root cause is malformed ACE syntax in `server.cfg` — FiveM's parser is strict about spacing
 - Verify your lines match exactly: `add_ace group.admin admin_menu.admin allow` (single space between each token, no tabs)
-- After editing `server.cfg`, run `restart FiveM-Admin-Menu` in the server console — a full server restart is not required
+- After editing `server.cfg`, run `restart fivem-admin-menu` in the server console — a full server restart is not required
 - Use `test_ace [player_id] admin_menu.superadmin` in the server console to confirm the correct node resolves
 
 **Menu doesn't open**
 
-- Confirm `ensure FiveM-Admin-Menu` is in `server.cfg`
+- Confirm `ensure fivem-admin-menu` is in `server.cfg`
 - Check F8 console for errors on resource start
 - Verify your ACE node is correctly assigned (`add_principal` line matches your identifier)
 
