@@ -1,42 +1,38 @@
-name: Bug Report
-about: Report a bug or unexpected behavior
-title: "[BUG] "
-labels: bug
+---
+name: Bug report
+about: Create a report to help us improve
+title: ''
+labels: ''
 assignees: ''
 
 ---
 
-## Describe the Bug
+**Describe the bug**
+A clear and concise description of what the bug is.
 
-A clear description of what the bug is.
-
-## Steps to Reproduce
-
+**To Reproduce**
+Steps to reproduce the behavior:
 1. Go to '...'
-2. Click on '...'
-3. See error
+2. Click on '....'
+3. Scroll down to '....'
+4. See error
 
-## Expected Behavior
+**Expected behavior**
+A clear and concise description of what you expected to happen.
 
-What you expected to happen.
+**Screenshots**
+If applicable, add screenshots to help explain your problem.
 
-## Actual Behavior
+**Desktop (please complete the following information):**
+ - OS: [e.g. iOS]
+ - Browser [e.g. chrome, safari]
+ - Version [e.g. 22]
 
-What actually happened.
+**Smartphone (please complete the following information):**
+ - Device: [e.g. iPhone6]
+ - OS: [e.g. iOS8.1]
+ - Browser [e.g. stock browser, safari]
+ - Version [e.g. 22]
 
-## Server Info
-
-- **Resource Version:** (e.g. 1.0.0)
-- **Framework:** ESX / QBCore / Standalone
-- **oxmysql installed:** Yes / No
-- **FiveM Server Build:** (check txAdmin or F8 console)
-
-## Console Output
-
-```
-Paste any F8 console errors or server console errors here.
-```
-
-## Additional Context
-
-Anything else that might help (other resources running, permission setup, etc).
+**Additional context**
+Add any other context about the problem here.
